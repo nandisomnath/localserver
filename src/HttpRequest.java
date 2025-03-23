@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 
 public class HttpRequest {
@@ -20,6 +24,106 @@ public class HttpRequest {
     public String getHeader(String key) {
         return headers.get(key);
     }
+
+
+    private String dirTableTemplate(String dirName, String path) throws Exception {
+        Path filePath = Paths.get(path);
+       
+        FileTime fileTime = Files.getLastModifiedTime(filePath);
+        Date lastModifiedTime = new Date(fileTime.toMillis());
+
+        SimpleDateFormat modifiedDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat modifiedTimeFormat = new SimpleDateFormat("HH:mm:ss");
+
+        String modifiedDate = modifiedDateFormat.format(lastModifiedTime);
+        String modifiedTime = modifiedTimeFormat.format(lastModifiedTime);
+
+
+        StringBuilder table = new StringBuilder();
+
+        table.append("<tr>");
+        table.append("<td>");
+        table.append("<table>");
+        table.append("<tbody>");
+        table.append("<tr>");
+        table.append(String.format("<td><a href=\"%s\">%s</a></td>", path, dirName));
+        table.append("</tr>");
+        table.append("</tbody>");
+        table.append("</table>");
+        table.append("</td>");
+        table.append("<td></td>");
+        table.append(String.format("<td>%s</td>", modifiedDate));
+        table.append(String.format("<td>%s</td>", modifiedTime));
+        table.append("</tr>");
+
+
+        return table.toString();
+      
+    }
+
+
+    private String fileTableTemplate(String fileName, String path) throws Exception {
+
+        Path filePath = Paths.get(path);
+        long fileSizeInBytes = Files.size(filePath);
+        int fileSizeInKb = (int)fileSizeInBytes / 1024;
+        FileTime fileTime = Files.getLastModifiedTime(filePath);
+        Date lastModifiedTime = new Date(fileTime.toMillis());
+
+        SimpleDateFormat modifiedDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat modifiedTimeFormat = new SimpleDateFormat("HH:mm:ss");
+
+        String modifiedDate = modifiedDateFormat.format(lastModifiedTime);
+        String modifiedTime = modifiedTimeFormat.format(lastModifiedTime);
+
+        StringBuilder tableRow = new StringBuilder();
+        tableRow.append("<tr>");
+        tableRow.append("<td>");
+        tableRow.append("<table>");
+        tableRow.append("<tbody>");
+        tableRow.append("<tr>");
+        tableRow.append(String.format("<td><a href=\"%s\">%s</a></td>", path, fileName));
+        tableRow.append("</tr>");
+        tableRow.append("</tbody>");
+        tableRow.append("</table>");
+        tableRow.append("</td>");
+        tableRow.append(String.format("<td>%d KB</td>", fileSizeInKb));
+        tableRow.append(String.format("<td>%s</td>", modifiedDate));
+        tableRow.append(String.format("<td>%s</td>", modifiedTime));
+        tableRow.append("</tr>");
+
+        return tableRow.toString();
+    }
+
+
+    private String generateIndex(String cwdPath) {
+
+        StringBuilder content = new StringBuilder();
+
+        content.append("<!DOCTYPE html>");
+        content.append("<html>");
+        content.append("<body dir=\"ltr\">");
+        content.append("<h1>Index of D:/</h1>");
+        content.append("<table order=\"\">");
+        content.append("<thead>");
+        content.append("<tr>");
+        content.append("<th><a href=\"\">Name</a></th>");
+        content.append("<th><a href=\"\">Size</a></th>");
+        content.append("<th colspan=\"2\"><a href=\"\">Last Modified</a></th>");
+        content.append("</tr>");
+        content.append("</thead>");
+        content.append("<tbody>");
+
+        // TODO: add table content
+
+        content.append("</tbody>");
+        content.append("</table>");
+        content.append("</body>");
+        content.append("</html>");
+
+        return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
+    }
+
 
     private String generateResponse(BufferedReader in) {
         try {
@@ -38,13 +142,16 @@ public class HttpRequest {
             // BufferedReader reader2;
             Path path;
             if (requestPath.equals("/")) {
+                // TODO: if index.html wasnot there then make a directory list and send it
                 path = Path.of(cwd.getCanonicalPath(), "index.html");
+                File index = new File(path.toUri());
+                if (!index.exists()) {
+                    return generateIndex(cwd.getCanonicalPath());
+                }
             } else {
                 path = Path.of(cwd.getCanonicalPath(), requestPath);
             }
             byte[] content = Files.readAllBytes(path);
-
-            String response = String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
 
             // TODO: parse this when all the headers are needed
             // while (line != null) {
@@ -52,7 +159,7 @@ public class HttpRequest {
             // System.out.println(line);
             // }
 
-            return response;
+            return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
         } catch (IOException e) {
             e.fillInStackTrace();
         }

@@ -1,2 +1,5 @@
 bin/
 lib/
+*.jar
+*.html
+*.htm
