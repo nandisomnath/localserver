@@ -32,11 +32,8 @@ public class DirectoryManager {
     }
 
     // List all the file and folders
-    public void listAll() throws Exception {
-       
-        
-        DirectoryManager.getPaths(paths, handler.getCanonicalPath());
-        handler.list();
+    public File[] listAll() throws Exception {
+        return handler.listFiles();
     }
 
 

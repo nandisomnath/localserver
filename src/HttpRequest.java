@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -25,10 +26,9 @@ public class HttpRequest {
         return headers.get(key);
     }
 
-
     private String dirTableTemplate(String dirName, String path) throws Exception {
         Path filePath = Paths.get(path);
-       
+
         FileTime fileTime = Files.getLastModifiedTime(filePath);
         Date lastModifiedTime = new Date(fileTime.toMillis());
 
@@ -37,7 +37,6 @@ public class HttpRequest {
 
         String modifiedDate = modifiedDateFormat.format(lastModifiedTime);
         String modifiedTime = modifiedTimeFormat.format(lastModifiedTime);
-
 
         StringBuilder table = new StringBuilder();
 
@@ -56,17 +55,15 @@ public class HttpRequest {
         table.append(String.format("<td>%s</td>", modifiedTime));
         table.append("</tr>");
 
-
         return table.toString();
-      
-    }
 
+    }
 
     private String fileTableTemplate(String fileName, String path) throws Exception {
 
         Path filePath = Paths.get(path);
         long fileSizeInBytes = Files.size(filePath);
-        int fileSizeInKb = (int)fileSizeInBytes / 1024;
+        int fileSizeInKb = (int) fileSizeInBytes / 1024;
         FileTime fileTime = Files.getLastModifiedTime(filePath);
         Date lastModifiedTime = new Date(fileTime.toMillis());
 
@@ -95,8 +92,7 @@ public class HttpRequest {
         return tableRow.toString();
     }
 
-
-    private String generateIndex(String cwdPath) {
+    private String generateIndex(String basePath, String cwdPath) throws Exception {
 
         StringBuilder content = new StringBuilder();
 
@@ -115,6 +111,22 @@ public class HttpRequest {
         content.append("<tbody>");
 
         // TODO: add table content
+        String tables;
+        DirectoryManager cwdManager = new DirectoryManager(cwdPath);
+        File[] all_paths = cwdManager.listAll();
+        for (int i = 0; i < all_paths.length; i++) {
+
+            var pathName = all_paths[i].getName();
+            var relativePath = Paths.get(basePath).relativize(Paths.get(all_paths[i].getCanonicalPath()));
+
+            if (all_paths[i].isDirectory()) {
+                tables = dirTableTemplate(pathName, relativePath.toString());
+                content.append(tables);
+            } else {
+                tables = fileTableTemplate(pathName, relativePath.toString());
+                content.append(tables);
+            }
+        }
 
         content.append("</tbody>");
         content.append("</table>");
@@ -124,8 +136,7 @@ public class HttpRequest {
         return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
     }
 
-
-    private String generateResponse(BufferedReader in) {
+    private String generateResponse(BufferedReader in) throws Exception {
         try {
             // first line is the get request line
             String line = in.readLine();
@@ -146,12 +157,26 @@ public class HttpRequest {
                 path = Path.of(cwd.getCanonicalPath(), "index.html");
                 File index = new File(path.toUri());
                 if (!index.exists()) {
-                    return generateIndex(cwd.getCanonicalPath());
+                    return generateIndex(cwd.getCanonicalPath(), cwd.getCanonicalPath());
                 }
-            } else {
-                path = Path.of(cwd.getCanonicalPath(), requestPath);
+            } 
+            
+           
+            path = Path.of(cwd.getCanonicalPath(), requestPath);
+            File currentObj = new File(path.toUri());
+
+            // File is not exist
+            if (!currentObj.exists()) {
+                throw new FileNotFoundException();
             }
-            byte[] content = Files.readAllBytes(path);
+
+            // When file is a path
+            if (currentObj.isFile()) {
+                byte[] content = Files.readAllBytes(path);
+                return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
+            } else {
+                return generateIndex(cwd.getCanonicalPath(), currentObj.getCanonicalPath());
+            }
 
             // TODO: parse this when all the headers are needed
             // while (line != null) {
@@ -159,8 +184,7 @@ public class HttpRequest {
             // System.out.println(line);
             // }
 
-            return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.fillInStackTrace();
         }
 
@@ -178,15 +202,24 @@ public class HttpRequest {
 
     public void sendResponse(BufferedReader in, PrintWriter out) {
 
-        String response = this.generateResponse(in);
-        // // printing the request string
-        // System.out.println(new String(in.readLine()));
-        if (response.contains("200")) {
-            System.out.println("   200 OK");
-        } else {
-            System.out.println("   404 Not Found");
+        String response = "";
+        try {
+            response = this.generateResponse(in);
+
+            // // printing the request string
+            // System.out.println(new String(in.readLine()));
+            if (response.contains("200")) {
+                System.out.println("   200 OK");
+            } else {
+                System.out.println("   404 Not Found");
+            }
+            // out.printf("%s", response);
+            out.print(response);
+            out.flush();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-        out.printf(response);
     }
 
 }
