@@ -136,7 +136,7 @@ public class HttpRequest {
         return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
     }
 
-    private String generateResponse(BufferedReader in) throws Exception {
+    private String generateResponse(BufferedReader in, File cwd) throws Exception {
         try {
             // first line is the get request line
             String line = in.readLine();
@@ -147,23 +147,27 @@ public class HttpRequest {
             String requestType = tokens[0].strip();
             String requestPath = tokens[1].strip();
 
-            File cwd = new File(".");
+            // File cwd = new File(".");
             // File target = new File(String.format("%s%s%s", , File.pathSeparator,));
             // FileReader reader = new FileReader(target);
             // BufferedReader reader2;
             Path path;
             if (requestPath.equals("/")) {
+                
                 // TODO: if index.html wasnot there then make a directory list and send it
                 path = Path.of(cwd.getCanonicalPath(), "index.html");
-                File index = new File(path.toUri());
+                File index = path.toFile();
                 if (!index.exists()) {
                     return generateIndex(cwd.getCanonicalPath(), cwd.getCanonicalPath());
+                } else {
+                    byte[] content = Files.readAllBytes(path);
+                    return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
                 }
             } 
             
            
-            path = Path.of(cwd.getCanonicalPath(), requestPath);
-            File currentObj = new File(path.toUri());
+            path = Paths.get(cwd.getCanonicalPath(), requestPath);
+            File currentObj = path.toFile();
 
             // File is not exist
             if (!currentObj.exists()) {
@@ -171,11 +175,11 @@ public class HttpRequest {
             }
 
             // When file is a path
-            if (currentObj.isFile()) {
+            if (currentObj.isDirectory()) {
+                return generateIndex(cwd.getCanonicalPath(), currentObj.getCanonicalPath());
+            } else {
                 byte[] content = Files.readAllBytes(path);
                 return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
-            } else {
-                return generateIndex(cwd.getCanonicalPath(), currentObj.getCanonicalPath());
             }
 
             // TODO: parse this when all the headers are needed
@@ -200,11 +204,11 @@ public class HttpRequest {
         return String.format("HTTP/1.1 404 Not Found\r\n\r\n%s", content.toString());
     }
 
-    public void sendResponse(BufferedReader in, PrintWriter out) {
+    public void sendResponse(BufferedReader in, PrintWriter out, File cwd) {
 
         String response = "";
         try {
-            response = this.generateResponse(in);
+            response = this.generateResponse(in, cwd);
 
             // // printing the request string
             // System.out.println(new String(in.readLine()));

@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -21,7 +22,7 @@ public class HttpServer {
         System.out.printf("http://0.0.0.0:%d\n", server.getLocalPort());
     }
 
-    public void serve() {
+    public void serve(String cwdPath) {
         // checking if the server is ready or not
         if (this.server == null) {
             return;
@@ -31,6 +32,7 @@ public class HttpServer {
         HttpRequest request;
         PrintWriter out;
         BufferedReader in;
+        File cwd = new File(cwdPath);
 
         while (true) {
             try {
@@ -40,7 +42,7 @@ public class HttpServer {
                 out = new PrintWriter(client.getOutputStream(), true);
 
                 request = new HttpRequest();
-                request.sendResponse(in, out);
+                request.sendResponse(in, out, cwd);
 
                 client.close();
             } catch (Exception e) {
