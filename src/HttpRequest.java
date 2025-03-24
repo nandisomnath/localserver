@@ -26,10 +26,10 @@ public class HttpRequest {
     public HttpRequest() {
         // headers = new HashMap<>();
         // path, dirname, modifieddate, modifiedtime
-        this.dirTable = "<tr><td><table><tbody><tr><td><a href=\"%s\">%s</a></td></tr></tbody></table></td><td></td><td>%s</td><td>%s</td></tr>";
+        this.dirTable = "<tr><td><table><tbody><tr><td><a href=\"\\%s\">%s</a></td></tr></tbody></table></td><td></td><td>%s</td><td>%s</td></tr>";
 
         // path, filename, filesizeinkb, modifieddate, modifiedtime
-        this.fileTable = "<tr><td><table><tbody><tr><td><a href=\"%s\">%s</a></td></tr></tbody></table></td><td>%d KB</td><td>%s</td><td>%s</td></tr>";
+        this.fileTable = "<tr><td><table><tbody><tr><td><a href=\"\\%s\">%s</a></td></tr></tbody></table></td><td>%d KB</td><td>%s</td><td>%s</td></tr>";
 
     }
 
@@ -41,40 +41,26 @@ public class HttpRequest {
     // return headers.get(key);
     // }
 
-    private String dirTableTemplate(String dirName, String path) throws Exception {
-        Path filePath = Paths.get(path);
-
+    private String dirTableTemplate(String dirPath, String path) throws Exception {
+        Path filePath = Paths.get(dirPath);
+        System.out.println(path);
+        System.out.println(filePath.toString());
+        System.out.println(this.dirTable);
         FileTime fileTime = Files.getLastModifiedTime(filePath);
         Date lastModifiedTime = new Date(fileTime.toMillis());
 
         String modifiedDate = modifiedDateFormat.format(lastModifiedTime);
         String modifiedTime = modifiedTimeFormat.format(lastModifiedTime);
 
-        // StringBuilder dirTable = new StringBuilder();
 
-        // dirTable.append("<tr>");
-        // dirTable.append("<td>");
-        // dirTable.append("<table>");
-        // dirTable.append("<tbody>");
-        // dirTable.append("<tr>");
-        // dirTable.append(String.format("<td><a href=\"%s\">%s</a></td>", path,
-        // dirName));
-        // dirTable.append("</tr>");
-        // dirTable.append("</tbody>");
-        // dirTable.append("</table>");
-        // dirTable.append("</td>");
-        // dirTable.append("<td></td>");
-        // dirTable.append(String.format("<td>%s</td>", modifiedDate));
-        // dirTable.append(String.format("<td>%s</td>", modifiedTime));
-        // dirTable.append("</tr>");
-
-        return String.format(this.dirTable, path, dirName, modifiedDate, modifiedTime);
-
+        String table =  String.format(this.dirTable, path, filePath.getFileName().toString(), modifiedDate, modifiedTime);
+        System.out.println(table);
+        return table;
     }
 
-    private String fileTableTemplate(String fileName, String path) throws Exception {
+    private String fileTableTemplate(String filePathString, String path) throws Exception {
 
-        Path filePath = Paths.get(path);
+        Path filePath = Paths.get(filePathString);
         int fileSizeInKb = (int) Files.size(filePath) / 1024;
         FileTime fileTime = Files.getLastModifiedTime(filePath);
         Date lastModifiedTime = new Date(fileTime.toMillis());
@@ -82,24 +68,7 @@ public class HttpRequest {
         String modifiedDate = modifiedDateFormat.format(lastModifiedTime);
         String modifiedTime = modifiedTimeFormat.format(lastModifiedTime);
 
-        // StringBuilder fileTable = new StringBuilder();
-        // fileTable.append("<tr>");
-        // fileTable.append("<td>");
-        // fileTable.append("<table>");
-        // fileTable.append("<tbody>");
-        // fileTable.append("<tr>");
-        // fileTable.append(String.format("<td><a href=\"%s\">%s</a></td>", path,
-        // fileName));
-        // fileTable.append("</tr>");
-        // fileTable.append("</tbody>");
-        // fileTable.append("</table>");
-        // fileTable.append("</td>");
-        // fileTable.append(String.format("<td>%d KB</td>", fileSizeInKb));
-        // fileTable.append(String.format("<td>%s</td>", modifiedDate));
-        // fileTable.append(String.format("<td>%s</td>", modifiedTime));
-        // fileTable.append("</tr>");
-
-        return String.format(this.fileTable, path, fileName, fileSizeInKb, modifiedDate, modifiedTime);
+        return String.format(this.fileTable, path, filePath.getFileName().toString(), fileSizeInKb, modifiedDate, modifiedTime);
     }
 
     private String getMimeType(String filePath) {
@@ -121,9 +90,6 @@ public class HttpRequest {
         if (filePath.endsWith(".js")) {
             return "application/javascript";
         }
-        // } if (filePath.endsWith(".ttf")) {
-        // return "font/ttf";
-        // }
 
         return "application/octect-stream";
     }
@@ -154,20 +120,24 @@ public class HttpRequest {
         content.append("<tbody>");
 
         // add table content complete
-        String pathName;
+        String filePath;
         Path relativePath;
         Path base = Paths.get(basePath);
         File[] all_paths = new File(cwdPath).listFiles();
 
         for (int i = 0; i < all_paths.length; i++) {
 
-            pathName = all_paths[i].getName();
-            relativePath = base.relativize(Paths.get(all_paths[i].getCanonicalPath()));
+            filePath = all_paths[i].getCanonicalPath();
+            relativePath = base.relativize(Paths.get(filePath));
+
+            System.out.printf("base: %s\n", base.toString());
+            System.out.printf("filePath: %s\n", filePath);
+            System.out.printf("relativePath: %s\n", relativePath.toString());
 
             if (all_paths[i].isDirectory()) {
-                content.append(dirTableTemplate(pathName, relativePath.toString()));
+                content.append(dirTableTemplate(filePath, relativePath.toString()));
             } else {
-                content.append(fileTableTemplate(pathName, relativePath.toString()));
+                content.append(fileTableTemplate(filePath, relativePath.toString()));
             }
         }
 
@@ -247,6 +217,7 @@ public class HttpRequest {
         }
 
         out.write("HTTP/1.1 404 Not Found\r\n".getBytes());
+        out.write("Content-Length: 0\r\n".getBytes());
         out.flush();
     }
 

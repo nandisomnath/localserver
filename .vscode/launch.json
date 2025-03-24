@@ -21,7 +21,7 @@
             "name": "App",
             "request": "launch",
             "mainClass": "App",
-            "args": "E:\\jdk-24_doc-all\\docs 8070",
+            "args": "D:\\ 8070",
             "projectName": "localserver_b371b4c2"
         }
     ]
