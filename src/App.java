@@ -6,10 +6,7 @@ public class App {
         if (args.length < 2) {
             System.out.println("Usage: localserver [directory] [port]");
         }
-        
-        
-        File file = new File(args[0]);
-        // System.setProperty("user.dir", file.getCanonicalPath());
+        File file = new File(args[0].strip());
         HttpServer server = new HttpServer(Integer.parseInt(args[1].strip()));
         try {
             System.out.printf("Listening at: %s\n", file.getCanonicalFile());

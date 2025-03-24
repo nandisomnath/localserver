@@ -5,51 +5,36 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.AsynchronousServerSocketChannel;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class HttpServer {
     private ServerSocket server;
-    private int port;
 
-    public HttpServer(int port) {
-        this.port = port;
-
-        try {
-            this.server = new ServerSocket(port);
-        } catch (IOException e) {
-            e.printStackTrace();
-            server = null;
-        }
-        System.out.printf("http://0.0.0.0:%d\n", server.getLocalPort());
+    public HttpServer(int port) throws IOException {
+        // throwing is required
+        this.server = new ServerSocket(port, 100);
+        System.out.printf("http://0.0.0.0:%d\n", port);
     }
 
     public void serve(String cwdPath) {
-        // checking if the server is ready or not
-        if (this.server == null) {
-            return;
-        }
-
-        Socket client;
-        HttpRequest request;
-        PrintWriter out;
-        BufferedReader in;
+        // Socket client;
+        HttpRequest request = new HttpRequest();
+        // PrintWriter out;
+        // BufferedReader in;
         File cwd = new File(cwdPath);
+        ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
         while (true) {
             try {
-                client = server.accept();
-
-                in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                out = new PrintWriter(client.getOutputStream(), true);
-
-                request = new HttpRequest();
-                request.sendResponse(in, out, cwd);
-
-                client.close();
+                Socket client = server.accept();
+                service.submit(() -> request.sendResponse(client, cwd));
+                
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-
     }
 
 }

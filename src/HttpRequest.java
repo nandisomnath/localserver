@@ -1,30 +1,44 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
+// import java.util.HashMap;
 
 public class HttpRequest {
-    private HashMap<String, String> headers;
+    SimpleDateFormat modifiedDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    SimpleDateFormat modifiedTimeFormat = new SimpleDateFormat("HH:mm:ss");
+    String dirTable;
+    String fileTable;
+    // private HashMap<String, String> headers;
 
     public HttpRequest() {
-        headers = new HashMap<>();
+        // headers = new HashMap<>();
+        // path, dirname, modifieddate, modifiedtime
+        this.dirTable = "<tr><td><table><tbody><tr><td><a href=\"%s\">%s</a></td></tr></tbody></table></td><td></td><td>%s</td><td>%s</td></tr>";
+        
+        // path, filename, filesizeinkb, modifieddate, modifiedtime
+        this.fileTable = "<tr><td><table><tbody><tr><td><a href=\"%s\">%s</a></td></tr></tbody></table></td><td>%d KB</td><td>%s</td><td>%s</td></tr>";
+        
     }
 
-    public void setHeader(String key, String value) {
-        headers.put(key, value);
-    }
+    // public void setHeader(String key, String value) {
+    // headers.put(key, value);
+    // }
 
-    public String getHeader(String key) {
-        return headers.get(key);
-    }
+    // public String getHeader(String key) {
+    // return headers.get(key);
+    // }
 
     private String dirTableTemplate(String dirName, String path) throws Exception {
         Path filePath = Paths.get(path);
@@ -32,67 +46,61 @@ public class HttpRequest {
         FileTime fileTime = Files.getLastModifiedTime(filePath);
         Date lastModifiedTime = new Date(fileTime.toMillis());
 
-        SimpleDateFormat modifiedDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat modifiedTimeFormat = new SimpleDateFormat("HH:mm:ss");
-
         String modifiedDate = modifiedDateFormat.format(lastModifiedTime);
         String modifiedTime = modifiedTimeFormat.format(lastModifiedTime);
 
-        StringBuilder table = new StringBuilder();
+        // StringBuilder dirTable = new StringBuilder();
 
-        table.append("<tr>");
-        table.append("<td>");
-        table.append("<table>");
-        table.append("<tbody>");
-        table.append("<tr>");
-        table.append(String.format("<td><a href=\"%s\">%s</a></td>", path, dirName));
-        table.append("</tr>");
-        table.append("</tbody>");
-        table.append("</table>");
-        table.append("</td>");
-        table.append("<td></td>");
-        table.append(String.format("<td>%s</td>", modifiedDate));
-        table.append(String.format("<td>%s</td>", modifiedTime));
-        table.append("</tr>");
+        // dirTable.append("<tr>");
+        // dirTable.append("<td>");
+        // dirTable.append("<table>");
+        // dirTable.append("<tbody>");
+        // dirTable.append("<tr>");
+        // dirTable.append(String.format("<td><a href=\"%s\">%s</a></td>", path,
+        // dirName));
+        // dirTable.append("</tr>");
+        // dirTable.append("</tbody>");
+        // dirTable.append("</table>");
+        // dirTable.append("</td>");
+        // dirTable.append("<td></td>");
+        // dirTable.append(String.format("<td>%s</td>", modifiedDate));
+        // dirTable.append(String.format("<td>%s</td>", modifiedTime));
+        // dirTable.append("</tr>");
 
-        return table.toString();
+        return String.format(this.dirTable, path, dirName, modifiedDate, modifiedTime);
 
     }
 
     private String fileTableTemplate(String fileName, String path) throws Exception {
 
         Path filePath = Paths.get(path);
-        long fileSizeInBytes = Files.size(filePath);
-        int fileSizeInKb = (int) fileSizeInBytes / 1024;
+        int fileSizeInKb = (int) Files.size(filePath) / 1024;
         FileTime fileTime = Files.getLastModifiedTime(filePath);
         Date lastModifiedTime = new Date(fileTime.toMillis());
-
-        SimpleDateFormat modifiedDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat modifiedTimeFormat = new SimpleDateFormat("HH:mm:ss");
 
         String modifiedDate = modifiedDateFormat.format(lastModifiedTime);
         String modifiedTime = modifiedTimeFormat.format(lastModifiedTime);
 
-        StringBuilder tableRow = new StringBuilder();
-        tableRow.append("<tr>");
-        tableRow.append("<td>");
-        tableRow.append("<table>");
-        tableRow.append("<tbody>");
-        tableRow.append("<tr>");
-        tableRow.append(String.format("<td><a href=\"%s\">%s</a></td>", path, fileName));
-        tableRow.append("</tr>");
-        tableRow.append("</tbody>");
-        tableRow.append("</table>");
-        tableRow.append("</td>");
-        tableRow.append(String.format("<td>%d KB</td>", fileSizeInKb));
-        tableRow.append(String.format("<td>%s</td>", modifiedDate));
-        tableRow.append(String.format("<td>%s</td>", modifiedTime));
-        tableRow.append("</tr>");
+        // StringBuilder fileTable = new StringBuilder();
+        // fileTable.append("<tr>");
+        // fileTable.append("<td>");
+        // fileTable.append("<table>");
+        // fileTable.append("<tbody>");
+        // fileTable.append("<tr>");
+        // fileTable.append(String.format("<td><a href=\"%s\">%s</a></td>", path, fileName));
+        // fileTable.append("</tr>");
+        // fileTable.append("</tbody>");
+        // fileTable.append("</table>");
+        // fileTable.append("</td>");
+        // fileTable.append(String.format("<td>%d KB</td>", fileSizeInKb));
+        // fileTable.append(String.format("<td>%s</td>", modifiedDate));
+        // fileTable.append(String.format("<td>%s</td>", modifiedTime));
+        // fileTable.append("</tr>");
 
-        return tableRow.toString();
+        return String.format(this.fileTable, path, fileName, fileSizeInKb, modifiedDate, modifiedTime);
     }
 
-    private String generateIndex(String basePath, String cwdPath) throws Exception {
+    private void sendIndex(String basePath, String cwdPath, OutputStream out) throws Exception {
 
         StringBuilder content = new StringBuilder();
 
@@ -110,21 +118,21 @@ public class HttpRequest {
         content.append("</thead>");
         content.append("<tbody>");
 
-        // TODO: add table content
-        String tables;
-        DirectoryManager cwdManager = new DirectoryManager(cwdPath);
-        File[] all_paths = cwdManager.listAll();
+        // add table content complete
+        String pathName;
+        Path relativePath;
+        Path base = Paths.get(basePath);
+        File[] all_paths = new File(cwdPath).listFiles();
+
         for (int i = 0; i < all_paths.length; i++) {
 
-            var pathName = all_paths[i].getName();
-            var relativePath = Paths.get(basePath).relativize(Paths.get(all_paths[i].getCanonicalPath()));
+            pathName = all_paths[i].getName();
+            relativePath = base.relativize(Paths.get(all_paths[i].getCanonicalPath()));
 
             if (all_paths[i].isDirectory()) {
-                tables = dirTableTemplate(pathName, relativePath.toString());
-                content.append(tables);
+                content.append(dirTableTemplate(pathName, relativePath.toString()));
             } else {
-                tables = fileTableTemplate(pathName, relativePath.toString());
-                content.append(tables);
+                content.append(fileTableTemplate(pathName, relativePath.toString()));
             }
         }
 
@@ -133,53 +141,56 @@ public class HttpRequest {
         content.append("</body>");
         content.append("</html>");
 
-        return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
+        out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+        out.write(content.toString().getBytes());
+        out.flush();
     }
 
-    private String generateResponse(BufferedReader in, File cwd) throws Exception {
+    private void sendFile(OutputStream out, Path path) throws Exception {
+        out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+        out.flush();
+        FileInputStream reader = new FileInputStream(path.toFile());
+        FileChannel channel = reader.getChannel();
+        channel.transferTo(0, channel.size(), Channels.newChannel(out));
+        // out.flush();
+        reader.close();
+    }
+
+    private void generateResponse(InputStream in, OutputStream out,  File cwd) throws Exception {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        
         try {
             // first line is the get request line
-            String line = in.readLine();
+            String line = reader.readLine();
             // This is the request info
-            System.out.printf("%s", line);
-            String[] tokens;
-            tokens = line.split(" ");
-            String requestType = tokens[0].strip();
+            System.out.printf("%s\n", line);
+            String[] tokens = line.split(" ");
+            // String requestType = tokens[0].strip(); // No use
             String requestPath = tokens[1].strip();
 
-            // File cwd = new File(".");
-            // File target = new File(String.format("%s%s%s", , File.pathSeparator,));
-            // FileReader reader = new FileReader(target);
-            // BufferedReader reader2;
             Path path;
             if (requestPath.equals("/")) {
-                
-                // TODO: if index.html wasnot there then make a directory list and send it
+
+                // if index.html wasnot there then make a directory list and send it
                 path = Path.of(cwd.getCanonicalPath(), "index.html");
                 File index = path.toFile();
                 if (!index.exists()) {
-                    return generateIndex(cwd.getCanonicalPath(), cwd.getCanonicalPath());
+                    sendIndex(cwd.getCanonicalPath(), cwd.getCanonicalPath(), out);
                 } else {
-                    byte[] content = Files.readAllBytes(path);
-                    return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
+                    sendFile(out, path);
                 }
-            } 
-            
-           
+            }
+
             path = Paths.get(cwd.getCanonicalPath(), requestPath);
             File currentObj = path.toFile();
 
-            // File is not exist
-            if (!currentObj.exists()) {
-                throw new FileNotFoundException();
+            if (currentObj.isFile()) {
+                sendFile(out, path);
             }
 
             // When file is a path
             if (currentObj.isDirectory()) {
-                return generateIndex(cwd.getCanonicalPath(), currentObj.getCanonicalPath());
-            } else {
-                byte[] content = Files.readAllBytes(path);
-                return String.format("HTTP/1.1 200 OK\r\n\r\n%s", new String(content));
+                sendIndex(cwd.getCanonicalPath(), currentObj.getCanonicalPath(), out);
             }
 
             // TODO: parse this when all the headers are needed
@@ -189,41 +200,32 @@ public class HttpRequest {
             // }
 
         } catch (Exception e) {
-            e.fillInStackTrace();
+            e.printStackTrace();
         }
 
-        StringBuilder content = new StringBuilder();
-        content.append("<html>");
-        content.append("<head><title>404 Not Found</title></head>");
-        content.append("<body>");
-        content.append("<h1>Not Found</h1>");
-        content.append("<p>The requested Url was Not found</p>");
-        content.append("</body>");
-        content.append("</html>");
-
-        return String.format("HTTP/1.1 404 Not Found\r\n\r\n%s", content.toString());
+        out.write("HTTP/1.1 404 Not Found\r\n".getBytes());
+        out.flush();
     }
 
-    public void sendResponse(BufferedReader in, PrintWriter out, File cwd) {
+    public void sendResponse(Socket client, File cwd) {
 
-        String response = "";
         try {
-            response = this.generateResponse(in, cwd);
-
-            // // printing the request string
-            // System.out.println(new String(in.readLine()));
-            if (response.contains("200")) {
-                System.out.println("   200 OK");
-            } else {
-                System.out.println("   404 Not Found");
-            }
+            var in = client.getInputStream();
+            var out = client.getOutputStream();
+            this.generateResponse(in, out, cwd);
             // out.printf("%s", response);
-            out.print(response);
-            out.flush();
+
+            // if (response.contains("200")) {
+            //     System.out.println("   200 OK");
+            // } else {
+            //     System.out.println("   404 Not Found");
+            // }
+            client.close();
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
     }
 
 }

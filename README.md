@@ -19,6 +19,4 @@ The `JAVA PROJECTS` view allows you to manage your dependencies. More details ca
 
 
 ## Todo
-
-1. simple request handler is ready now write the error handler and other functionality
-2. use directory manager and list all the directory and generate html
+ All clear

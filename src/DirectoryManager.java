@@ -10,26 +10,28 @@ public class DirectoryManager {
     public DirectoryManager(String path) {
         // TODO: check the handler is directory or not
         handler = new File(path);
-        paths = new ArrayList<>();
+        // paths = new ArrayList<>();
     }
 
-    private static void getPaths(ArrayList<String> paths, String path) throws Exception {
-        File file = new File(path);
-        File temp;
-        File[] all_paths = file.listFiles();
-        if (all_paths == null) {
-            return;
-        }
-        for (int i = 0; i < all_paths.length; i++) {
-            temp = all_paths[i];
-            if (temp.isDirectory()) {
-                paths.add(temp.getCanonicalPath());
-                getPaths(paths, temp.getCanonicalPath());
-            } else {
-                paths.add(temp.getCanonicalPath());
-            }
-        }
-    }
+    // it is for recursive paths
+
+    // private static void getPaths(ArrayList<String> paths, String path) throws Exception {
+    //     File file = new File(path);
+    //     File temp;
+    //     File[] all_paths = file.listFiles();
+    //     if (all_paths == null) {
+    //         return;
+    //     }
+    //     for (int i = 0; i < all_paths.length; i++) {
+    //         temp = all_paths[i];
+    //         if (temp.isDirectory()) {
+    //             paths.add(temp.getCanonicalPath());
+    //             getPaths(paths, temp.getCanonicalPath());
+    //         } else {
+    //             paths.add(temp.getCanonicalPath());
+    //         }
+    //     }
+    // }
 
     // List all the file and folders
     public File[] listAll() throws Exception {
