@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -26,10 +27,10 @@ public class HttpRequest {
         // headers = new HashMap<>();
         // path, dirname, modifieddate, modifiedtime
         this.dirTable = "<tr><td><table><tbody><tr><td><a href=\"%s\">%s</a></td></tr></tbody></table></td><td></td><td>%s</td><td>%s</td></tr>";
-        
+
         // path, filename, filesizeinkb, modifieddate, modifiedtime
         this.fileTable = "<tr><td><table><tbody><tr><td><a href=\"%s\">%s</a></td></tr></tbody></table></td><td>%d KB</td><td>%s</td><td>%s</td></tr>";
-        
+
     }
 
     // public void setHeader(String key, String value) {
@@ -87,7 +88,8 @@ public class HttpRequest {
         // fileTable.append("<table>");
         // fileTable.append("<tbody>");
         // fileTable.append("<tr>");
-        // fileTable.append(String.format("<td><a href=\"%s\">%s</a></td>", path, fileName));
+        // fileTable.append(String.format("<td><a href=\"%s\">%s</a></td>", path,
+        // fileName));
         // fileTable.append("</tr>");
         // fileTable.append("</tbody>");
         // fileTable.append("</table>");
@@ -98,6 +100,39 @@ public class HttpRequest {
         // fileTable.append("</tr>");
 
         return String.format(this.fileTable, path, fileName, fileSizeInKb, modifiedDate, modifiedTime);
+    }
+
+    private String getMimeType(String filePath) {
+        if (filePath.endsWith(".ttf")) {
+            return "font/ttf";
+        }
+        if (filePath.endsWith(".woff")) {
+            return "aplication/font-woff";
+        }
+        if (filePath.endsWith(".woff2")) {
+            return "aplication/font-woff2";
+        }
+        if (filePath.endsWith(".html")) {
+            return "text/html";
+        }
+        if (filePath.endsWith(".css")) {
+            return "text/css";
+        }
+        if (filePath.endsWith(".js")) {
+            return "application/javascript";
+        }
+        // } if (filePath.endsWith(".ttf")) {
+        // return "font/ttf";
+        // }
+
+        return "application/octect-stream";
+    }
+
+
+    private void sendHeaders(OutputStream out,String filePath) throws IOException {
+        String mime = getMimeType(filePath);
+        out.write(String.format("Content-Type: %s\r\n", mime).getBytes());
+        out.flush();
     }
 
     private void sendIndex(String basePath, String cwdPath, OutputStream out) throws Exception {
@@ -141,13 +176,17 @@ public class HttpRequest {
         content.append("</body>");
         content.append("</html>");
 
-        out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+        out.write("HTTP/1.1 200 OK\r\n".getBytes());
+        this.sendHeaders(out, "index.html");
+        out.write("\r\n".getBytes());
         out.write(content.toString().getBytes());
         out.flush();
     }
 
     private void sendFile(OutputStream out, Path path) throws Exception {
-        out.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+        out.write("HTTP/1.1 200 OK\r\n".getBytes());
+        this.sendHeaders(out, path.toString());
+        out.write("\r\n".getBytes());
         out.flush();
         FileInputStream reader = new FileInputStream(path.toFile());
         FileChannel channel = reader.getChannel();
@@ -156,9 +195,9 @@ public class HttpRequest {
         reader.close();
     }
 
-    private void generateResponse(InputStream in, OutputStream out,  File cwd) throws Exception {
+    private void generateResponse(InputStream in, OutputStream out, File cwd) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        
+
         try {
             // first line is the get request line
             String line = reader.readLine();
@@ -176,8 +215,10 @@ public class HttpRequest {
                 File index = path.toFile();
                 if (!index.exists()) {
                     sendIndex(cwd.getCanonicalPath(), cwd.getCanonicalPath(), out);
+                    return;
                 } else {
                     sendFile(out, path);
+                    return;
                 }
             }
 
@@ -186,11 +227,13 @@ public class HttpRequest {
 
             if (currentObj.isFile()) {
                 sendFile(out, path);
+                return;
             }
 
             // When file is a path
             if (currentObj.isDirectory()) {
                 sendIndex(cwd.getCanonicalPath(), currentObj.getCanonicalPath(), out);
+                return;
             }
 
             // TODO: parse this when all the headers are needed
@@ -216,9 +259,9 @@ public class HttpRequest {
             // out.printf("%s", response);
 
             // if (response.contains("200")) {
-            //     System.out.println("   200 OK");
+            // System.out.println(" 200 OK");
             // } else {
-            //     System.out.println("   404 Not Found");
+            // System.out.println(" 404 Not Found");
             // }
             client.close();
         } catch (Exception e) {

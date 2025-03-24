@@ -1,11 +1,7 @@
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.channels.AsynchronousServerSocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -30,7 +26,7 @@ public class HttpServer {
             try {
                 Socket client = server.accept();
                 service.submit(() -> request.sendResponse(client, cwd));
-                
+                // request.sendResponse(client, cwd);
             } catch (Exception e) {
                 e.printStackTrace();
             }
