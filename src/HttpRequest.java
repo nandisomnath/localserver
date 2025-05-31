@@ -43,9 +43,11 @@ public class HttpRequest {
 
     private String dirTableTemplate(String dirPath, String path) throws Exception {
         Path filePath = Paths.get(dirPath);
-        System.out.println(path);
-        System.out.println(filePath.toString());
-        System.out.println(this.dirTable);
+
+        // System.out.println(path);
+        // System.out.println(filePath.toString());
+        // System.out.println(this.dirTable);
+
         FileTime fileTime = Files.getLastModifiedTime(filePath);
         Date lastModifiedTime = new Date(fileTime.toMillis());
 
@@ -54,7 +56,7 @@ public class HttpRequest {
 
 
         String table =  String.format(this.dirTable, path, filePath.getFileName().toString(), modifiedDate, modifiedTime);
-        System.out.println(table);
+        // System.out.println(table);
         return table;
     }
 
@@ -130,9 +132,10 @@ public class HttpRequest {
             filePath = all_paths[i].getCanonicalPath();
             relativePath = base.relativize(Paths.get(filePath));
 
-            System.out.printf("base: %s\n", base.toString());
-            System.out.printf("filePath: %s\n", filePath);
-            System.out.printf("relativePath: %s\n", relativePath.toString());
+            // For debug purpose
+            // System.out.printf("base: %s\n", base.toString());
+            // System.out.printf("filePath: %s\n", filePath);
+            // System.out.printf("relativePath: %s\n", relativePath.toString());
 
             if (all_paths[i].isDirectory()) {
                 content.append(dirTableTemplate(filePath, relativePath.toString()));
@@ -161,7 +164,6 @@ public class HttpRequest {
         FileInputStream reader = new FileInputStream(path.toFile());
         FileChannel channel = reader.getChannel();
         channel.transferTo(0, channel.size(), Channels.newChannel(out));
-        // out.flush();
         reader.close();
     }
 

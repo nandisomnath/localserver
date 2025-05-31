@@ -1,5 +1,4 @@
 import java.io.File;
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -8,8 +7,9 @@ import java.util.concurrent.Executors;
 public class HttpServer {
     private ServerSocket server;
 
-    public HttpServer(int port) throws IOException {
+    public HttpServer(int port) throws Exception {
         // throwing is required
+        // only 100 connections at a time other are not acceptable.
         this.server = new ServerSocket(port, 100);
         System.out.printf("http://0.0.0.0:%d\n", port);
     }
