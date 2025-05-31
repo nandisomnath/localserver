@@ -81,10 +81,10 @@ public class HttpRequest {
             return "font/ttf";
         }
         if (filePath.endsWith(".woff")) {
-            return "aplication/font-woff";
+            return "application/font-woff";
         }
         if (filePath.endsWith(".woff2")) {
-            return "aplication/font-woff2";
+            return "application/font-woff2";
         }
         if (filePath.endsWith(".html")) {
             return "text/html";
@@ -113,7 +113,7 @@ public class HttpRequest {
         content.append("<!DOCTYPE html>");
         content.append("<html>");
         content.append("<body dir=\"ltr\">");
-        content.append("<h1>Index of D:/</h1>");
+        content.append("<h1>Index of ").append(cwdPath).append("</h1>");
         content.append("<table order=\"\">");
         content.append("<thead>");
         content.append("<tr>");
