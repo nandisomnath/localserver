@@ -1,7 +1,6 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -21,6 +20,10 @@ public class HttpRequest {
     SimpleDateFormat modifiedTimeFormat = new SimpleDateFormat("HH:mm:ss");
     String dirTable;
     String fileTable;
+
+    final byte[] STATUS_OK_BYTES = "HTTP/1.1 200 OK\r\n".getBytes();
+
+
     // private HashMap<String, String> headers;
 
     public HttpRequest() {
@@ -97,7 +100,7 @@ public class HttpRequest {
     }
 
 
-    private void sendHeaders(OutputStream out,String filePath) throws IOException {
+    private void sendHeaders(OutputStream out,String filePath) throws Exception {
         String mime = getMimeType(filePath);
         out.write(String.format("Content-Type: %s\r\n", mime).getBytes());
         out.flush();
@@ -149,7 +152,7 @@ public class HttpRequest {
         content.append("</body>");
         content.append("</html>");
 
-        out.write("HTTP/1.1 200 OK\r\n".getBytes());
+        out.write(STATUS_OK_BYTES);
         this.sendHeaders(out, "index.html");
         out.write("\r\n".getBytes());
         out.write(content.toString().getBytes());
@@ -157,7 +160,7 @@ public class HttpRequest {
     }
 
     private void sendFile(OutputStream out, Path path) throws Exception {
-        out.write("HTTP/1.1 200 OK\r\n".getBytes());
+        out.write(STATUS_OK_BYTES);
         this.sendHeaders(out, path.toString());
         out.write("\r\n".getBytes());
         out.flush();
