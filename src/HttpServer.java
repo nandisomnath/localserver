@@ -15,17 +15,15 @@ public class HttpServer {
     }
 
     public void serve(String cwdPath) {
-        // Socket client;
         HttpRequest request = new HttpRequest();
-        // PrintWriter out;
-        // BufferedReader in;
+    
         File cwd = new File(cwdPath);
         ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
         while (true) {
             try {
                 Socket client = server.accept();
-                service.submit(() -> request.sendResponse(client, cwd));
+                service.submit(() -> request.sendResponse(client, cwdPath));
                 // request.sendResponse(client, cwd);
             } catch (Exception e) {
                 e.printStackTrace();

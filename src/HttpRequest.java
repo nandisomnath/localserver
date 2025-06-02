@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -56,9 +55,9 @@ public class HttpRequest {
         reader.close();
     }
 
-    private void generateResponse(InputStream in, OutputStream out, File cwd) throws Exception {
+    private void generateResponse(InputStream in, OutputStream out, String cwdPath) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        String cwdCanonicalPath = cwd.getCanonicalPath();
+        String cwdCanonicalPath = cwdPath;
 
         try {
             // first line is the get request line
@@ -109,19 +108,12 @@ public class HttpRequest {
         out.flush();
     }
 
-    public void sendResponse(Socket client, File cwd) {
+    public void sendResponse(Socket client, String cwdPath) {
 
         try {
             var in = client.getInputStream();
             var out = client.getOutputStream();
-            this.generateResponse(in, out, cwd);
-            // out.printf("%s", response);
-
-            // if (response.contains("200")) {
-            // System.out.println(" 200 OK");
-            // } else {
-            // System.out.println(" 404 Not Found");
-            // }
+            this.generateResponse(in, out, cwdPath);
             client.close();
         } catch (Exception e) {
             e.printStackTrace();
