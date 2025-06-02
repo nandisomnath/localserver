@@ -1,5 +1,4 @@
 import java.io.InputStream;
-// import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.channels.Channels;
@@ -53,16 +52,11 @@ public class HttpRequest {
         channel.transferTo(0, channel.size(), Channels.newChannel(out));
     }
 
-    private void generateResponse(InputStream in, OutputStream out, String cwdPath) throws Exception {
-        // BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        
-        
+    private void generateResponse(InputStream in, OutputStream out, String cwdPath) throws Exception {        
         String cwdCanonicalPath = cwdPath;
-
 
         try {
             // first line is the get request line
-            // String line = reader.readLine();
             String line = new String(in.readNBytes(50));
             // This is the request info
             String[] tokens = line.split(" ");
