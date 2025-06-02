@@ -1,6 +1,5 @@
-import java.io.BufferedReader;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+// import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.channels.Channels;
@@ -55,16 +54,19 @@ public class HttpRequest {
     }
 
     private void generateResponse(InputStream in, OutputStream out, String cwdPath) throws Exception {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        // BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        
+        
         String cwdCanonicalPath = cwdPath;
+
 
         try {
             // first line is the get request line
-            String line = reader.readLine();
+            // String line = reader.readLine();
+            String line = new String(in.readNBytes(50));
             // This is the request info
-            System.out.printf("%s\n", line);
             String[] tokens = line.split(" ");
-            // String requestType = tokens[0].strip(); // No use
+            System.out.printf("%s %s\n", tokens[0], tokens[1]);
             String requestPath = tokens[1].strip();
 
             Path path;
