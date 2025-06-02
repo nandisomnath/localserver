@@ -7,6 +7,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -43,12 +45,12 @@ public class HttpRequest {
         out.flush();
     }
 
-    private void sendFile(OutputStream out, Path path) throws Exception {
+    private void sendFile(OutputStream out, String filePath) throws Exception {
         out.write(STATUS_OK_BYTES);
-        this.sendHeaders(out, path.toString());
+        this.sendHeaders(out, filePath);
         out.write("\r\n".getBytes());
         out.flush();
-        FileInputStream reader = new FileInputStream(path.toFile());
+        FileInputStream reader = new FileInputStream(filePath);
         FileChannel channel = reader.getChannel();
         channel.transferTo(0, channel.size(), Channels.newChannel(out));
         reader.close();
@@ -72,29 +74,29 @@ public class HttpRequest {
 
                 // if index.html wasnot there then make a directory list and send it
                 path = Path.of(cwdCanonicalPath, "index.html");
-                File index = path.toFile();
-                if (!index.exists()) {
+                
+                if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
                     WebPage page = new WebPage();
                     page.sendIndex(cwdCanonicalPath, cwdCanonicalPath, out);
                     return;
                 } else {
-                    sendFile(out, path);
+                   
+                    sendFile(out,  path.toString());
                     return;
                 }
             }
 
             path = Paths.get(cwdCanonicalPath, requestPath);
-            File currentObj = path.toFile();
-
-            if (currentObj.isFile()) {
-                sendFile(out, path);
+            // File currentObj = path.toFile();
+            if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+                sendFile(out,  path.toString());
                 return;
             }
 
             // When file is a path
-            if (currentObj.isDirectory()) {
+            if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
                 WebPage page = new WebPage();
-                page.sendIndex(cwdCanonicalPath, currentObj.getCanonicalPath(), out);
+                page.sendIndex(cwdCanonicalPath, path.toString(), out);
                 return;
             }
 
