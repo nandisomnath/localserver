@@ -1,4 +1,3 @@
-import java.io.File;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -17,7 +16,6 @@ public class HttpServer {
     public void serve(String cwdPath) {
         HttpRequest request = new HttpRequest();
     
-        File cwd = new File(cwdPath);
         ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
         while (true) {

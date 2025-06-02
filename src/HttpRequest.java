@@ -1,5 +1,4 @@
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -10,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 public class HttpRequest {
 
@@ -44,15 +44,14 @@ public class HttpRequest {
         out.flush();
     }
 
-    private void sendFile(OutputStream out, String filePath) throws Exception {
+    private void sendFile(OutputStream out, Path filePath) throws Exception {
         out.write(STATUS_OK_BYTES);
-        this.sendHeaders(out, filePath);
+        this.sendHeaders(out, filePath.toString());
         out.write("\r\n".getBytes());
         out.flush();
-        FileInputStream reader = new FileInputStream(filePath);
-        FileChannel channel = reader.getChannel();
+        // FileInputStream reader = new FileInputStream(filePath);
+        FileChannel channel = FileChannel.open(filePath, StandardOpenOption.READ);
         channel.transferTo(0, channel.size(), Channels.newChannel(out));
-        reader.close();
     }
 
     private void generateResponse(InputStream in, OutputStream out, String cwdPath) throws Exception {
@@ -80,7 +79,7 @@ public class HttpRequest {
                     return;
                 } else {
                    
-                    sendFile(out,  path.toString());
+                    sendFile(out,  path);
                     return;
                 }
             }
@@ -88,7 +87,7 @@ public class HttpRequest {
             path = Paths.get(cwdCanonicalPath, requestPath);
             // File currentObj = path.toFile();
             if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
-                sendFile(out,  path.toString());
+                sendFile(out,  path);
                 return;
             }
 
@@ -111,8 +110,8 @@ public class HttpRequest {
     public void sendResponse(Socket client, String cwdPath) {
 
         try {
-            var in = client.getInputStream();
-            var out = client.getOutputStream();
+            InputStream in = client.getInputStream();
+            OutputStream out = client.getOutputStream();
             this.generateResponse(in, out, cwdPath);
             client.close();
         } catch (Exception e) {
